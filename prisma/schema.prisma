@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  USER
+}
+
+model User {
+  id           String         @id @default(uuid())
+  name         String
+  surname      String?
+  email        String         @unique
+  profile_pic  String?        @default("")
+  google_id    String?        @default("")
+  role         Role           @default(USER)
+  is_verified  Boolean        @default(false)
+  show_history show_history[]
+  courses      Courses[]
+  created_at   DateTime       @default(now())
+}
+
+model Courses {
+  id         String   @id @default(uuid())
+  playlist   playlist @relation(fields: [playlistId], references: [id])
+  playlistId String
+  User       User     @relation(fields: [userId], references: [id])
+  userId     String
+}
+
+model show_history {
+  id          String   @id @default(uuid())
+  category_id String
+  lesson_id   String
+  showed_at   DateTime @default(now())
+  User        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?
+
+  lesson lessons @relation(fields: [lesson_id], references: [id], onDelete: Cascade)
+}
+
+model playlist {
+  id          String    @id @default(uuid())
+  title       String
+  unique_name String    @unique
+  description String
+  thumbnail   String
+  lessons     lessons[]
+  created_at  DateTime  @default(now())
+  users       Courses[]
+}
+
+model lessons {
+  id           String         @id @default(uuid())
+  video_url    String         @unique
+  title        String
+  description  String
+  order        Int
+  vocabulary   vocabulary[]
+  playlist     playlist?      @relation(fields: [playlistId], references: [id])
+  playlistId   String?
+  created_at   DateTime       @default(now())
+  show_history show_history[]
+}
+
+model vocabulary {
+  id          String  @id @default(uuid())
+  word        String
+  translation String
+  lesson      lessons @relation(fields: [lessonsId], references: [id])
+  lessonsId   String
+}
+
+model Admin {
+  id         String   @id @default(uuid())
+  password   String
+  created_at DateTime @default(now())
+}
